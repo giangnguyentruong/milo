@@ -1,0 +1,63 @@
+.milo__backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity, visibility;
+    transition-duration: 0.3s;
+}
+
+.milo__backdrop--show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.milo__backdrop--show .milo__container {
+    transform: scale(1);
+}
+
+.milo__container {
+    position: relative;
+    width: min(600px, 90%);
+    padding: 20px 20px 0;
+    border-radius: 10px;
+    background: #fff;
+    transform: scale(0);
+    transition: transform 0.3s;
+}
+
+.milo__close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ebebeb;
+    color: #666;
+    font-size: 2rem;
+}
+
+.milo__close:hover {
+    color: #333;
+}
+
+.milo__content {
+    max-width: 80vh;
+    overflow-y: auto;
+}
+
+.milo__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 20px 0;
+}
+
+.milo--no-scroll {
+    overflow: hidden;
+}
