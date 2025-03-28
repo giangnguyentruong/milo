@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "minify": "terser milo.js -o milo.min.js && csso milo.css -o milo.min.css"
+    "minify": "terser src/milo.js -o milo.min.js && csso src/milo.css -o milo.min.css"
   },
   "dependencies": {
     "csso-cli": "^4.0.2",

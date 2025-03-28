@@ -1,4 +1,4 @@
-.milo__backdrop {
+.milo {
     position: fixed;
     inset: 0;
     display: flex;
@@ -23,7 +23,7 @@
 .milo__container {
     position: relative;
     width: min(600px, 90%);
-    padding: 20px 20px 0;
+    padding: 20px;
     border-radius: 10px;
     background: #fff;
     transform: scale(0);
@@ -55,7 +55,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 20px 0;
+    padding-top: 20px;
 }
 
 .milo--no-scroll {

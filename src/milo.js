@@ -1,7 +1,27 @@
 Milo.elements = [];
 function Milo(options = {}) {
+    if (!options.templateId && !options.content) {
+        return console.error("You must provide one of 'content' or 'templateId'.");
+    }
+
+    if (options.templateId && options.content) {
+        options.templateId = null;
+        console.warn("Both 'content' and 'templateId' are specified. 'content' will take precedence, and 'templateId' will be ignored");
+    }
+
+    if (options.templateId) {
+        this.template = document.querySelector(`#${options.templateId}`);
+
+        if (!this.template) {
+        console.log(`#${options.templateId} is does not exist`);
+        return;
+       }
+    }
+
     this.opt = Object.assign(
         {
+            enableScrollLock: true,
+            scrollLockTarget:() => document.body,
             destroyOnClose: true,
             closeMethods: ["button", "overlay", "escape"],
             cssClass: [],
@@ -9,19 +29,16 @@ function Milo(options = {}) {
         },
         options
     );
-    this.template = document.querySelector(`#${this.opt.templateId}`);
 
-    if (!this.template) {
-        console.log(`#${this.opt.templateId} is does not exist`);
-        return;
-    }
-
+    this.content = this.opt.content
+    
     const { closeMethods } = this.opt;
     this._allowButtonClose = closeMethods.includes("button");
     this._allowBackdropClose = closeMethods.includes("overlay");
     this._allowEscapeClose = closeMethods.includes("escape");
 
     this._handleEscapeKey = this._handleEscapeKey.bind(this);
+    this._footerButtons = [];
 }
 
 Milo.prototype._getScrollbarWidth = function () {
@@ -41,11 +58,15 @@ Milo.prototype._getScrollbarWidth = function () {
 };
 
 Milo.prototype._build = function () {
-    const content = this.template.content.cloneNode(true);
+    const contentNode = this.content ? document.createElement("div") : this.template.content.cloneNode(true);
+
+    if (this.content) {
+        contentNode.innerHTML = this.content
+    }
 
     //create modal elements
     this._backdrop = document.createElement("div");
-    this._backdrop.className = "milo__backdrop";
+    this._backdrop.className = "milo";
 
     const container = document.createElement("div");
     container.className = "milo__container";
@@ -63,12 +84,12 @@ Milo.prototype._build = function () {
         container.append(closeBtn);
     }
 
-    const modalContent = document.createElement("div");
-    modalContent.className = "milo__content";
+    this._modalContent = document.createElement("div");
+    this._modalContent.className = "milo__content";
 
     //Append content and Elements
-    modalContent.append(content);
-    container.append(modalContent);
+    this._modalContent.append(contentNode);
+    container.append(this._modalContent);
 
     if (this.opt.footer) {
         this._modalFooter = document.createElement("div");
@@ -84,14 +105,15 @@ Milo.prototype._build = function () {
     }
 
     this._backdrop.append(container);
-    document.body.append(this._backdrop);
 };
 
 Milo.prototype.open = function () {
+    const isFirstIndex = Milo.elements.length === 0;
     Milo.elements.push(this);
     if (!this._backdrop) {
         this._build();
     }
+    document.body.append(this._backdrop);
     setTimeout(() => {
         this._backdrop.classList.add("milo__backdrop--show");
     }, 0);
@@ -112,10 +134,23 @@ Milo.prototype.open = function () {
     }
 
     //Disable scrolling
-    document.body.classList.add("milo--no-scroll");
-    document.body.style.paddingRight = this._getScrollbarWidth() + "px";
+    if (this.opt.enableScrollLock) {
+        const target = this.opt.scrollLockTarget();
+        if (this._hasScrollBar(target) && isFirstIndex) {
+           const targetPadRight = parseInt(getComputedStyle(target).paddingRight);
+           target.classList.add("milo--no-scroll");
+           target.style.paddingRight = targetPadRight + this._getScrollbarWidth() + "px";
+        }
+    }
     return this._backdrop;
 };
+
+Milo.prototype.setContent = function (content) {
+    this.content = content
+    if (this._modalContent) {
+        this._modalContent.innerHTML = content;
+    }
+}
 
 Milo.prototype._handleEscapeKey = function (e) {
     const lastModal = Milo.elements[Milo.elements.length - 1];
@@ -123,6 +158,14 @@ Milo.prototype._handleEscapeKey = function (e) {
         this.close();
     }
 };
+
+Milo.prototype._hasScrollBar = function (target) {
+    if ([document.documentElement, document.body].includes(target)) {
+        return document.documentElement.scrollHeight > document.documentElement.clientHeight || 
+        document.body.scrollHeight > document.body.clientHeight;
+    }
+    return target.scrollHeight > target.clientHeight;
+}
 
 Milo.prototype._ontransitionend = function (callback) {
     this._backdrop.ontransitionend = (e) => {
@@ -146,9 +189,12 @@ Milo.prototype.close = function (destroy = this.opt.destroyOnClose) {
         if (typeof this.opt.onClose === "function") this.opt.onClose();
     });
     // Enable scrolling
-    if (!Milo.elements.length) {
-        document.body.classList.remove("milo--no-scroll");
-        document.body.style.paddingRight = "";
+    if (!Milo.elements.length && this.opt.enableScrollLock) {
+        const target = this.opt.scrollLockTarget();
+        if (this._hasScrollBar(target)) {
+            target.classList.remove("milo--no-scroll");
+            target.style.paddingRight = "";
+        }
     }
 };
 
@@ -160,8 +206,6 @@ Milo.prototype.setFooterContent = function (html) {
     this._footerContent = html;
     this._renderFooterContent();
 };
-
-Milo.prototype._footerButtons = [];
 
 Milo.prototype._createButtons = function (cssClass, title, callback) {
     const button = document.createElement("button");
